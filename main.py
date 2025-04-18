@@ -596,7 +596,6 @@ class ISEEApplication:
                 
                 # In a real implementation, this would analyze and synthesize the texts
                 # For prototype purposes, we'll just create a placeholder
-                # Extract actual responses from the results
                 response_texts = [result["response"] for result, _ in cluster]
                 
                 # Use the first response's text if available, or create a summary
@@ -633,7 +632,6 @@ class ISEEApplication:
                             "average_score": sum(score for _, score in cluster) / len(cluster)
                         }
                     }
-                }
                 
                 synthesized[idea_id] = synthesized_idea
         
