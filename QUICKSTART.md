@@ -14,14 +14,16 @@ This guide provides a quick overview of how to get started with the Idea Synthes
    pip install -r requirements.txt
    ```
 
-2. **API Keys** (for future integration)
+2. **API Keys**
    
-   While the current prototype simulates API calls, you'll eventually need API keys:
+   Set up your API keys to use real model APIs:
    ```bash
    # Set environment variables for API keys
    export ANTHROPIC_API_KEY="your-anthropic-api-key"
    export OPENAI_API_KEY="your-openai-api-key"
    ```
+   
+   If you don't have API keys, the system will automatically use simulation mode.
 
 ## Running Your First Idea Generation Session
 
@@ -35,7 +37,7 @@ This will:
 - Create a base query
 - Generate variations of the query
 - Create combinations with different models, instructions, and domains
-- Simulate execution of these combinations
+- Execute these combinations (using real API calls if keys are available, or simulation otherwise)
 - Evaluate the results
 - Synthesize ideas from the top results
 - Display the output
@@ -98,8 +100,9 @@ The modular design allows for easy extension:
 2. **Add new domains**
    - Edit `domain_manager.py` to add new application domains
 
-3. **Implement real API integration**
-   - Update `model_api_integration.py` with your API keys and endpoints
+3. **Use configuration file for models**
+   - Create a custom configuration file based on `sample_config.json`
+   - Update model settings, parameters, and API endpoints as needed
 
 4. **Enhance evaluation criteria**
    - Modify `evaluation_scoring.py` to add more sophisticated scoring methods
@@ -137,12 +140,38 @@ python main.py --load-state "data/state/energy_transition.json" --output-file "d
 - **Memory issues**: Reduce the number of combinations with `--max-combinations` for large runs
 - **Data persistence**: Use `--save-state` frequently to avoid losing work
 
+## Using Configuration Files
+
+Try using the sample configuration file for more control:
+
+```bash
+python main.py --config sample_config.json --query "How might we improve education?" --max-combinations 10
+```
+
+The configuration file allows you to:
+- Define specific models and their parameters
+- Configure custom instruction templates
+- Set up domains with relevant keywords
+- Adjust scoring criteria weights
+
+## Controlling API Usage
+
+Control how the system uses APIs:
+
+```bash
+# Force simulation mode even if API keys are available
+python main.py --query "Your query" --simulate
+
+# Preview what would be executed without making API calls
+python main.py --query "Your query" --dry-run
+```
+
 ## Next Steps
 
 Once you're comfortable with the basic operation:
 
 1. Try different domains and queries to explore the framework's versatility
 2. Experiment with different instruction combinations to find what works best for your use cases
-3. Implement real API integration for more powerful idea generation
+3. Create your own configuration file with preferred models and parameters
 4. Add custom evaluation criteria specific to your domain
 5. Develop your own synthesis methods to extract the most value from the generated ideas

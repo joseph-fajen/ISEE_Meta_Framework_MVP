@@ -86,13 +86,16 @@ The modular architecture allows for several extension points:
 
 ## Technical Implementation
 
-The current implementation is a working prototype that demonstrates the conceptual framework:
+The current implementation demonstrates the conceptual framework with the following features:
 
 - Written in Python for maximum flexibility and ease of development
-- Simulates AI model calls for prototype purposes
+- Supports real API calls to Anthropic (Claude) and OpenAI models
+- Falls back to simulation mode when API keys aren't available
+- Uses configuration files for model settings and parameters
 - Uses simple scoring heuristics for evaluation
 - Provides both command-line and interactive interfaces
 - Supports saving and loading of application state
+- Offers flexible control over API usage vs. simulation
 
 ## Scaling Considerations
 
