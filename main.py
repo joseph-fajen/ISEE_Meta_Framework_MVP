@@ -934,6 +934,8 @@ def main():
     parser.add_argument("--simulate", action="store_true", help="Use simulated responses instead of real model APIs")
     parser.add_argument("--dry-run", action="store_true", help="Print what would be executed without actually running")
     parser.add_argument("--balanced-models", action="store_true", help="Ensure balanced representation of models in the executed combinations")
+    parser.add_argument("--synthesize-method", choices=["cluster_based", "cross_pollination"], default="cluster_based", 
+                        help="Method to use for synthesizing ideas (cluster_based or cross_pollination)")
     
     # Parse arguments
     args = parser.parse_args()
@@ -944,6 +946,29 @@ def main():
     # Load state if requested
     if args.load_state:
         app.load_state(args.load_state)
+        
+        # If synthesize-method is provided without a query, just synthesize from loaded state
+        if args.synthesize_method and not args.query:
+            top_results = app.get_top_results(n=10)
+            if top_results:
+                synthesized = app.synthesize_ideas(top_results=top_results, method=args.synthesize_method)
+                output = app.format_output(ideas=synthesized, format_type=args.output_format)
+                
+                if args.output_file:
+                    with open(args.output_file, 'w') as f:
+                        f.write(output)
+                    print(f"Output saved to {args.output_file}")
+                else:
+                    print("\nOutput:")
+                    print("=" * 80)
+                    print(output)
+                    
+                # Save state if requested
+                if args.save_state:
+                    app.save_state(args.save_state)
+                    
+                # Exit after synthesis
+                return
     
     # Determine if we should use simulation mode
     use_simulation = args.simulate
@@ -978,6 +1003,14 @@ def main():
                 use_real_models=not use_simulation,
                 balanced_models=args.balanced_models
             )
+            
+            # Apply custom synthesis method if specified
+            if args.synthesize_method and args.synthesize_method != "cluster_based":
+                print(f"Applying {args.synthesize_method} synthesis method...")
+                top_results = app.get_top_results(n=10)
+                if top_results:
+                    synthesized = app.synthesize_ideas(top_results=top_results, method=args.synthesize_method)
+                    output = app.format_output(ideas=synthesized, format_type=args.output_format)
         
         # Print or save the output if not a dry run
         if not args.dry_run:
