@@ -15,6 +15,8 @@ ISEE represents a fundamentally different approach to using AI for innovation:
 
 *For a deeper understanding of why ISEE matters and how it differs from traditional AI approaches, see [WHY_ISEE.md](WHY_ISEE.md)*
 
+*For concrete examples of how to use ISEE for different innovation challenges, see [EXAMPLE_USE_CASES.md](EXAMPLE_USE_CASES.md)*
+
 ## Repository Contents
 
 This repository contains the following files:

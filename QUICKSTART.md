@@ -212,3 +212,5 @@ Once you're comfortable with the basic operation:
 3. Create your own configuration file with preferred models and parameters
 4. Add custom evaluation criteria specific to your domain
 5. Develop your own synthesis methods to extract the most value from the generated ideas
+
+*For detailed, step-by-step example use cases demonstrating the full power of ISEE, see [EXAMPLE_USE_CASES.md](EXAMPLE_USE_CASES.md)*
