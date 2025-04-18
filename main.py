@@ -14,7 +14,7 @@ import random
 
 # Import modules
 from model_api_integration import ModelAPIFactory, ModelAPIClient
-from instruction_templates import TemplateLibrary, create_default_library
+from instruction_templates import TemplateLibrary, create_default_library, InstructionTemplate
 from query_generator import QueryGenerator, create_default_queries, Query
 from domain_manager import DomainManager, create_default_domains, Domain
 from evaluation_scoring import ScoringFramework, create_default_framework
