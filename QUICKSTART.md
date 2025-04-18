@@ -79,14 +79,27 @@ python main.py --query "How might we reimagine public education?" --models 3 --i
 
 ## Saving and Loading State
 
-You can save the current state of your session and resume later:
+One of the most powerful features of the ISEE framework is the ability to save and load the complete state of your session, preserving all combinations, API responses, evaluations, and synthesized ideas:
 
 ```bash
 # Run a session and save the state
 python main.py --query "How might we reduce food waste?" --save-state "food_waste_state.json"
 
-# Later, load the state and continue working
+# Later, even after restarting your computer, load the state and continue working
 python main.py --load-state "food_waste_state.json" --output-file "food_waste_ideas.md"
+```
+
+The state file contains everything needed to restore your session exactly as it was, including all API responses. This means:
+
+- You can shut down your computer and pick up where you left off days or weeks later
+- You can avoid making the same API calls again, saving time and API costs
+- You can try different synthesis approaches on the same data
+- You can share your work with colleagues by sharing the state file
+
+For example, to load a state file and try a different output format:
+
+```bash
+python main.py --load-state "food_waste_state.json" --output-format json
 ```
 
 ## Customizing Output Format
