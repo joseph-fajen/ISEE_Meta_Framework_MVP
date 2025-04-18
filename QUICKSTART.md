@@ -36,6 +36,19 @@ This guide provides a quick overview of how to get started with the Idea Synthes
    
    If you don't have API keys, the system will automatically use simulation mode.
 
+## Understanding the ISEE Approach
+
+### Traditional vs. ISEE Approach
+
+| Traditional AI Approach | ISEE Approach |
+|------------------------|---------------|
+| Single prompt | Dozens/hundreds of combinations |
+| One cognitive style | Multiple cognitive frameworks |
+| Fixed context | Various domains and perspectives |
+| Manual evaluation | Systematic scoring and ranking |
+| One-off generation | Persistent state across sessions |
+| Linear exploration | Combinatorial exploration |
+
 ## Running Your First Idea Generation Session
 
 Try a simple run to see the framework in action:

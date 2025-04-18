@@ -4,6 +4,17 @@
 
 The Idea Synthesis and Extraction Engine is a meta-framework for innovation that systematically leverages AI to generate, evaluate, and extract high-value concepts across any domain. Rather than using AI in a single-prompt manner, this framework creates a deliberate combinatorial approach that maximizes the exploration of possibility space before filtering for the most promising ideas.
 
+### A New Paradigm for AI-Powered Innovation
+
+ISEE represents a fundamentally different approach to using AI for innovation:
+
+- **Beyond Single Prompts**: Instead of relying on individual prompts, ISEE systematically explores combinations of models, cognitive frameworks, queries, and domains
+- **Maximizing Cognitive Diversity**: By employing multiple instruction templates that embody different thinking styles, ISEE accesses a wider range of approaches than a single human could generate
+- **From Volume to Value**: ISEE doesn't just generate content—it evaluates, ranks, and synthesizes the outputs to extract the most valuable concepts
+- **Persistent Exploration**: With state saving capabilities, teams can build cumulative knowledge across sessions and collaborate on complex innovation challenges
+
+*For a deeper understanding of why ISEE matters and how it differs from traditional AI approaches, see [WHY_ISEE.md](WHY_ISEE.md)*
+
 ## Repository Contents
 
 This repository contains the following files:
