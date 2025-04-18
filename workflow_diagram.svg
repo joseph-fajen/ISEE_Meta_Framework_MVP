@@ -1,0 +1,91 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f8f9fa" rx="5" ry="5"/>
+  
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="20" text-anchor="middle" font-weight="bold">Idea Synthesis and Extraction Engine - Implementation Workflow</text>
+  
+  <!-- Input Layer -->
+  <rect x="50" y="70" width="700" height="100" fill="#e6f2ff" stroke="#0066cc" stroke-width="2" rx="10" ry="10"/>
+  <text x="400" y="90" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Input Layer</text>
+  
+  <rect x="80" y="110" width="140" height="40" fill="#ffffff" stroke="#0066cc" stroke-width="1" rx="5" ry="5"/>
+  <text x="150" y="135" font-family="Arial" font-size="12" text-anchor="middle">Model Selection</text>
+  
+  <rect x="240" y="110" width="140" height="40" fill="#ffffff" stroke="#0066cc" stroke-width="1" rx="5" ry="5"/>
+  <text x="310" y="135" font-family="Arial" font-size="12" text-anchor="middle">Instruction Templates</text>
+  
+  <rect x="400" y="110" width="140" height="40" fill="#ffffff" stroke="#0066cc" stroke-width="1" rx="5" ry="5"/>
+  <text x="470" y="135" font-family="Arial" font-size="12" text-anchor="middle">Query Formulation</text>
+  
+  <rect x="560" y="110" width="140" height="40" fill="#ffffff" stroke="#0066cc" stroke-width="1" rx="5" ry="5"/>
+  <text x="630" y="135" font-family="Arial" font-size="12" text-anchor="middle">Domain Specification</text>
+  
+  <!-- Orchestration Layer -->
+  <rect x="50" y="190" width="700" height="100" fill="#e6ffe6" stroke="#009900" stroke-width="2" rx="10" ry="10"/>
+  <text x="400" y="210" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Orchestration Layer</text>
+  
+  <rect x="80" y="230" width="140" height="40" fill="#ffffff" stroke="#009900" stroke-width="1" rx="5" ry="5"/>
+  <text x="150" y="255" font-family="Arial" font-size="12" text-anchor="middle">Combination Generator</text>
+  
+  <rect x="240" y="230" width="140" height="40" fill="#ffffff" stroke="#009900" stroke-width="1" rx="5" ry="5"/>
+  <text x="310" y="255" font-family="Arial" font-size="12" text-anchor="middle">Execution Scheduler</text>
+  
+  <rect x="400" y="230" width="140" height="40" fill="#ffffff" stroke="#009900" stroke-width="1" rx="5" ry="5"/>
+  <text x="470" y="255" font-family="Arial" font-size="12" text-anchor="middle">Result Collector</text>
+  
+  <rect x="560" y="230" width="140" height="40" fill="#ffffff" stroke="#009900" stroke-width="1" rx="5" ry="5"/>
+  <text x="630" y="255" font-family="Arial" font-size="12" text-anchor="middle">Memory Manager</text>
+  
+  <!-- Evaluation Layer -->
+  <rect x="50" y="310" width="700" height="100" fill="#fff0e6" stroke="#cc6600" stroke-width="2" rx="10" ry="10"/>
+  <text x="400" y="330" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Evaluation Layer</text>
+  
+  <rect x="80" y="350" width="140" height="40" fill="#ffffff" stroke="#cc6600" stroke-width="1" rx="5" ry="5"/>
+  <text x="150" y="375" font-family="Arial" font-size="12" text-anchor="middle">Scoring Engine</text>
+  
+  <rect x="240" y="350" width="140" height="40" fill="#ffffff" stroke="#cc6600" stroke-width="1" rx="5" ry="5"/>
+  <text x="310" y="375" font-family="Arial" font-size="12" text-anchor="middle">Pattern Detector</text>
+  
+  <rect x="400" y="350" width="140" height="40" fill="#ffffff" stroke="#cc6600" stroke-width="1" rx="5" ry="5"/>
+  <text x="470" y="375" font-family="Arial" font-size="12" text-anchor="middle">Cluster Analyzer</text>
+  
+  <rect x="560" y="350" width="140" height="40" fill="#ffffff" stroke="#cc6600" stroke-width="1" rx="5" ry="5"/>
+  <text x="630" y="375" font-family="Arial" font-size="12" text-anchor="middle">Novelty Assessor</text>
+  
+  <!-- Extraction Layer -->
+  <rect x="50" y="430" width="700" height="100" fill="#e6e6ff" stroke="#6600cc" stroke-width="2" rx="10" ry="10"/>
+  <text x="400" y="450" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Extraction Layer</text>
+  
+  <rect x="80" y="470" width="140" height="40" fill="#ffffff" stroke="#6600cc" stroke-width="1" rx="5" ry="5"/>
+  <text x="150" y="495" font-family="Arial" font-size="12" text-anchor="middle">Synthesis Module</text>
+  
+  <rect x="240" y="470" width="140" height="40" fill="#ffffff" stroke="#6600cc" stroke-width="1" rx="5" ry="5"/>
+  <text x="310" y="495" font-family="Arial" font-size="12" text-anchor="middle">Refinement Pipeline</text>
+  
+  <rect x="400" y="470" width="140" height="40" fill="#ffffff" stroke="#6600cc" stroke-width="1" rx="5" ry="5"/>
+  <text x="470" y="495" font-family="Arial" font-size="12" text-anchor="middle">Output Formatter</text>
+  
+  <rect x="560" y="470" width="140" height="40" fill="#ffffff" stroke="#6600cc" stroke-width="1" rx="5" ry="5"/>
+  <text x="630" y="495" font-family="Arial" font-size="12" text-anchor="middle">Feedback Integrator</text>
+  
+  <!-- Arrows connecting layers -->
+  <path d="M 400 170 L 400 190" stroke="#333333" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 400 290 L 400 310" stroke="#333333" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 400 410 L 400 430" stroke="#333333" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Feedback loop -->
+  <path d="M 50 480 C 20 480 20 120 50 120" stroke="#993399" stroke-width="2" stroke-dasharray="5,5" fill="none" marker-end="url(#arrowhead)"/>
+  <text x="25" y="300" font-family="Arial" font-size="12" text-anchor="middle" transform="rotate(270 25 300)" fill="#993399">Feedback Loop</text>
+  
+  <!-- Output Arrow -->
+  <path d="M 750 480 L 780 480" stroke="#333333" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <text x="770" y="465" font-family="Arial" font-size="12" text-anchor="middle">Output</text>
+  
+  <!-- Arrowhead definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" />
+    </marker>
+  </defs>
+</svg>

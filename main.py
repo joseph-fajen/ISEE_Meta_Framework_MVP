@@ -1,0 +1,648 @@
+"""
+Main Application for ISEE Framework
+
+This module provides a simple command-line interface to interact with the
+Idea Synthesis and Extraction Engine framework.
+"""
+
+import os
+import json
+import argparse
+from typing import Dict, Any, List, Optional, Tuple
+import time
+import random
+
+# Import modules
+from model_api_integration import ModelAPIFactory
+from instruction_templates import TemplateLibrary, create_default_library
+from query_generator import QueryGenerator, create_default_queries, Query
+from domain_manager import DomainManager, create_default_domains, Domain
+from evaluation_scoring import ScoringFramework, create_default_framework
+
+class ISEEApplication:
+    """Main application class for the ISEE framework."""
+    
+    def __init__(self, config_path: Optional[str] = None):
+        """Initialize the ISEE application.
+        
+        Args:
+            config_path: Optional path to a configuration file.
+        """
+        # Initialize components
+        self.template_library = create_default_library()
+        self.query_generator = QueryGenerator()
+        self.domain_manager = DomainManager()
+        self.scoring_framework = create_default_framework()
+        
+        # Add default data
+        for query in create_default_queries():
+            self.query_generator.add_base_query(query)
+        
+        for domain in create_default_domains():
+            self.domain_manager.add_domain(domain)
+        
+        # Storage for results
+        self.combinations = []
+        self.results = {}
+        self.evaluations = {}
+        self.synthesized_ideas = {}
+        
+        # Load configuration if provided
+        if config_path:
+            self.load_config(config_path)
+    
+    def load_config(self, config_path: str) -> None:
+        """Load configuration from a file.
+        
+        Args:
+            config_path: Path to the configuration file.
+            
+        Raises:
+            FileNotFoundError: If the file does not exist.
+            json.JSONDecodeError: If the file is not valid JSON.
+        """
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        
+        # Process configuration
+        print(f"Loading configuration from {config_path}...")
+        
+        # Directory for data
+        os.makedirs("data", exist_ok=True)
+    
+    def save_state(self, state_path: str) -> None:
+        """Save the current state to a file.
+        
+        Args:
+            state_path: Path to save the state to.
+        """
+        state = {
+            "combinations": self.combinations,
+            "results": self.results,
+            "evaluations": self.evaluations,
+            "synthesized_ideas": self.synthesized_ideas
+        }
+        
+        with open(state_path, 'w') as f:
+            json.dump(state, f, indent=2)
+        
+        print(f"State saved to {state_path}")
+    
+    def load_state(self, state_path: str) -> None:
+        """Load state from a file.
+        
+        Args:
+            state_path: Path to the state file.
+            
+        Raises:
+            FileNotFoundError: If the file does not exist.
+            json.JSONDecodeError: If the file is not valid JSON.
+        """
+        with open(state_path, 'r') as f:
+            state = json.load(f)
+        
+        self.combinations = state.get("combinations", [])
+        self.results = state.get("results", {})
+        self.evaluations = state.get("evaluations", {})
+        self.synthesized_ideas = state.get("synthesized_ideas", {})
+        
+        print(f"State loaded from {state_path}")
+    
+    def generate_combinations(
+        self,
+        query_id: str,
+        domain_ids: Optional[List[str]] = None,
+        model_count: int = 2,
+        instruction_count: int = 3,
+        query_variations: int = 2
+    ) -> List[Dict[str, Any]]:
+        """Generate combinations of models, instructions, queries, and domains.
+        
+        Args:
+            query_id: ID of the base query.
+            domain_ids: Optional list of domain IDs. If None, all domains are used.
+            model_count: Number of models to use.
+            instruction_count: Number of instructions to use.
+            query_variations: Number of query variations to generate.
+            
+        Returns:
+            List of combination dictionaries.
+            
+        Raises:
+            KeyError: If the query ID does not exist.
+        """
+        # Get the base query
+        base_query = self.query_generator.get_query_by_id(query_id)
+        if not base_query:
+            raise KeyError(f"No query with ID '{query_id}' exists")
+        
+        # Generate query variations
+        variations = self.query_generator.generate_variations(query_id, count=query_variations)
+        all_queries = [base_query] + variations
+        
+        # Get domains
+        if domain_ids:
+            domains = [self.domain_manager.get_domain(did) for did in domain_ids]
+        else:
+            domains = self.domain_manager.list_domains()
+        
+        # For prototype, use placeholder model IDs
+        models = [f"model_{i}" for i in range(1, model_count + 1)]
+        
+        # Get instructions
+        all_templates = self.template_library.list_templates()
+        if len(all_templates) > instruction_count:
+            # Randomly select a subset of templates
+            templates = random.sample(all_templates, instruction_count)
+        else:
+            templates = all_templates
+        
+        # Generate all combinations
+        combinations = []
+        
+        for model in models:
+            for template in templates:
+                for query in all_queries:
+                    for domain in domains:
+                        combination_id = f"{model}_{template.id}_{query.id}_{domain.id}"
+                        
+                        combination = {
+                            "id": combination_id,
+                            "model": model,
+                            "template": template.id,
+                            "query": query.id,
+                            "domain": domain.id
+                        }
+                        
+                        combinations.append(combination)
+        
+        # Store the combinations
+        self.combinations = combinations
+        
+        print(f"Generated {len(combinations)} combinations")
+        return combinations
+    
+    def execute_combinations(
+        self,
+        combinations: Optional[List[Dict[str, Any]]] = None,
+        max_to_execute: Optional[int] = None,
+        dry_run: bool = False
+    ) -> Dict[str, Any]:
+        """Execute the generated combinations.
+        
+        Args:
+            combinations: Optional list of combinations to execute. If None, uses stored combinations.
+            max_to_execute: Optional maximum number of combinations to execute.
+            dry_run: If True, just print what would be executed without actually executing.
+            
+        Returns:
+            Dictionary mapping combination IDs to results.
+        """
+        combinations = combinations or self.combinations
+        
+        if max_to_execute and len(combinations) > max_to_execute:
+            print(f"Limiting execution to {max_to_execute} out of {len(combinations)} combinations")
+            combinations = combinations[:max_to_execute]
+        
+        if dry_run:
+            print(f"Would execute {len(combinations)} combinations")
+            for i, combo in enumerate(combinations[:5], 1):
+                print(f"{i}. Combination: {combo['id']}")
+                if i == 5 and len(combinations) > 5:
+                    print(f"... and {len(combinations) - 5} more")
+            return {}
+        
+        results = {}
+        
+        for i, combo in enumerate(combinations, 1):
+            print(f"Executing combination {i}/{len(combinations)}: {combo['id']}")
+            
+            # Get the components
+            template = self.template_library.get_template(combo["template"])
+            query_obj = self.query_generator.get_query_by_id(combo["query"])
+            domain = self.domain_manager.get_domain(combo["domain"])
+            
+            # In a real implementation, this would call the model API
+            # For prototype purposes, we'll just simulate it
+            result = self._simulate_model_response(combo, template, query_obj, domain)
+            
+            # Store the result
+            results[combo["id"]] = result
+            self.results[combo["id"]] = result
+            
+            # Add a small delay to simulate processing time
+            time.sleep(0.1)
+        
+        print(f"Executed {len(results)} combinations")
+        return results
+    
+    def _simulate_model_response(
+        self,
+        combination: Dict[str, Any],
+        template: Any,
+        query: Query,
+        domain: Domain
+    ) -> Dict[str, Any]:
+        """Simulate a model response for prototype purposes.
+        
+        Args:
+            combination: Combination dictionary.
+            template: Instruction template.
+            query: Query object.
+            domain: Domain object.
+            
+        Returns:
+            Simulated result dictionary.
+        """
+        # Format the instruction template
+        formatted_instruction = template.format({
+            "domain": domain.description,
+            **query.variables
+        })
+        
+        # Combine the instruction and query
+        prompt = f"{formatted_instruction}\n\n{query.text}"
+        
+        # In a real implementation, this would call the model API
+        # For prototype purposes, we'll just generate a placeholder response
+        model_name = combination["model"]
+        template_style = template.metadata.get("cognitive_style", "default")
+        
+        # Generate a placeholder response based on the components
+        response_parts = [
+            f"This is a simulated response from {model_name} using the {template_style} approach.",
+            f"Domain: {domain.name}",
+            f"The query was: {query.text}",
+            "Here are some ideas that address this challenge:",
+        ]
+        
+        # Add some random "ideas" based on the domain keywords
+        ideas = []
+        for i in range(3):
+            if domain.keywords:
+                keyword = random.choice(domain.keywords)
+                ideas.append(f"Idea {i+1}: A solution involving {keyword} that addresses the core challenge.")
+            else:
+                ideas.append(f"Idea {i+1}: A novel approach to solving this problem.")
+        
+        response_parts.extend(ideas)
+        
+        # Create a simulation of a conclusion
+        response_parts.append(f"These ideas represent a {template_style} approach to the problem within the {domain.name} domain.")
+        
+        # Join the parts
+        response_text = "\n\n".join(response_parts)
+        
+        return {
+            "combination_id": combination["id"],
+            "prompt": prompt,
+            "response": response_text,
+            "metadata": {
+                "model": model_name,
+                "template_style": template_style,
+                "timestamp": time.time()
+            }
+        }
+    
+    def evaluate_results(
+        self, 
+        results: Optional[Dict[str, Any]] = None,
+        criteria: Optional[List[str]] = None
+    ) -> Dict[str, Dict[str, float]]:
+        """Evaluate the results against the scoring criteria.
+        
+        Args:
+            results: Optional dictionary of results to evaluate. If None, uses stored results.
+            criteria: Optional list of criteria to evaluate against. If None, uses all criteria.
+            
+        Returns:
+            Dictionary mapping combination IDs to evaluation scores.
+        """
+        results = results or self.results
+        
+        if not results:
+            print("No results to evaluate")
+            return {}
+        
+        evaluations = {}
+        
+        for combo_id, result in results.items():
+            text = result["response"]
+            
+            # Score the text
+            scores = self.scoring_framework.score_text(text)
+            
+            if criteria:
+                # Filter to only the requested criteria
+                scores = {k: v for k, v in scores.items() if k in criteria}
+            
+            # Calculate the overall score
+            overall = self.scoring_framework.calculate_weighted_score(scores)
+            scores["overall"] = overall
+            
+            # Store the scores
+            evaluations[combo_id] = scores
+            self.evaluations[combo_id] = scores
+        
+        print(f"Evaluated {len(evaluations)} results")
+        return evaluations
+    
+    def get_top_results(
+        self, 
+        criterion: str = "overall", 
+        n: int = 10
+    ) -> List[Tuple[Dict[str, Any], float]]:
+        """Get the top N results based on a specific criterion.
+        
+        Args:
+            criterion: The criterion to sort by.
+            n: Number of top results to return.
+            
+        Returns:
+            List of (result, score) tuples sorted by the criterion in descending order.
+        """
+        if not self.evaluations or not self.results:
+            print("No evaluated results to rank")
+            return []
+        
+        # Pair results with their scores
+        scored_results = []
+        for combo_id, evaluation in self.evaluations.items():
+            if criterion in evaluation and combo_id in self.results:
+                score = evaluation[criterion]
+                result = self.results[combo_id]
+                scored_results.append((result, score))
+        
+        # Sort by score in descending order
+        scored_results.sort(key=lambda x: x[1], reverse=True)
+        
+        # Return the top N
+        return scored_results[:n]
+    
+    def synthesize_ideas(
+        self, 
+        top_results: Optional[List[Tuple[Dict[str, Any], float]]] = None,
+        method: str = "cluster_based"
+    ) -> Dict[str, Any]:
+        """Synthesize ideas from the top results.
+        
+        Args:
+            top_results: Optional list of (result, score) tuples. If None, gets top results automatically.
+            method: Method to use for synthesis (cluster_based, cross_pollination, etc.).
+            
+        Returns:
+            Dictionary of synthesized ideas.
+        """
+        if top_results is None:
+            top_results = self.get_top_results(n=10)
+        
+        if not top_results:
+            print("No results to synthesize")
+            return {}
+        
+        print(f"Synthesizing ideas from {len(top_results)} top results using {method} method")
+        
+        # In a real implementation, this would use sophisticated NLP techniques
+        # For prototype purposes, we'll just create placeholder synthesized ideas
+        synthesized = {}
+        
+        if method == "cluster_based":
+            # Simulate clustering into 3 groups
+            clusters = [
+                top_results[:len(top_results)//3],
+                top_results[len(top_results)//3:2*len(top_results)//3],
+                top_results[2*len(top_results)//3:]
+            ]
+            
+            for i, cluster in enumerate(clusters, 1):
+                if not cluster:
+                    continue
+                
+                # Create a synthesized idea from this cluster
+                idea_id = f"synthesized_idea_{i}"
+                
+                # Extract information from the results in this cluster
+                result_texts = [result["response"] for result, _ in cluster]
+                combined_text = "\n\n".join(result_texts)
+                
+                # In a real implementation, this would analyze and synthesize the texts
+                # For prototype purposes, we'll just create a placeholder
+                synthesized_idea = {
+                    "id": idea_id,
+                    "title": f"Synthesized Idea {i}",
+                    "description": f"This idea represents a synthesis of {len(cluster)} top-ranked responses.",
+                    "source_combinations": [result["combination_id"] for result, _ in cluster],
+                    "text": f"Synthesized text would extract the common themes and innovative elements from cluster {i}.",
+                    "metadata": {
+                        "method": method,
+                        "cluster_id": i,
+                        "cluster_size": len(cluster),
+                        "average_score": sum(score for _, score in cluster) / len(cluster)
+                    }
+                }
+                
+                synthesized[idea_id] = synthesized_idea
+        
+        elif method == "cross_pollination":
+            # Simulate cross-pollination by combining elements from top results
+            idea_id = "synthesized_idea_crossover"
+            
+            synthesized_idea = {
+                "id": idea_id,
+                "title": "Cross-Pollinated Innovation",
+                "description": f"This idea combines elements from {len(top_results)} diverse top-ranked responses.",
+                "source_combinations": [result["combination_id"] for result, _ in top_results],
+                "text": "Cross-pollinated text would extract complementary elements from different responses and combine them in novel ways.",
+                "metadata": {
+                    "method": method,
+                    "sources_count": len(top_results),
+                    "average_score": sum(score for _, score in top_results) / len(top_results)
+                }
+            }
+            
+            synthesized[idea_id] = synthesized_idea
+        
+        else:
+            print(f"Unknown synthesis method: {method}")
+        
+        # Store the synthesized ideas
+        self.synthesized_ideas.update(synthesized)
+        
+        print(f"Synthesized {len(synthesized)} ideas")
+        return synthesized
+    
+    def format_output(
+        self, 
+        ideas: Optional[Dict[str, Any]] = None, 
+        format_type: str = "markdown"
+    ) -> str:
+        """Format the synthesized ideas for output.
+        
+        Args:
+            ideas: Optional dictionary of ideas to format. If None, uses stored synthesized ideas.
+            format_type: Output format type (markdown, json, etc.).
+            
+        Returns:
+            Formatted output string.
+        """
+        ideas = ideas or self.synthesized_ideas
+        
+        if not ideas:
+            return "No synthesized ideas to format"
+        
+        if format_type == "markdown":
+            output = "# Synthesized Ideas\n\n"
+            
+            for idea_id, idea in ideas.items():
+                output += f"## {idea['title']}\n\n"
+                output += f"{idea['description']}\n\n"
+                output += f"### Key Points\n\n"
+                output += f"{idea['text']}\n\n"
+                
+                if "metadata" in idea:
+                    output += "### Metadata\n\n"
+                    for key, value in idea["metadata"].items():
+                        output += f"- **{key}**: {value}\n"
+                
+                output += "\n---\n\n"
+            
+            return output
+        
+        elif format_type == "json":
+            return json.dumps(ideas, indent=2)
+        
+        else:
+            print(f"Unknown format type: {format_type}")
+            return json.dumps(ideas, indent=2)
+    
+    def run_complete_pipeline(
+        self,
+        query_text: str,
+        domain_name: Optional[str] = None,
+        model_count: int = 2,
+        instruction_count: int = 3,
+        query_variations: int = 2,
+        max_combinations: Optional[int] = 10,
+        output_format: str = "markdown"
+    ) -> str:
+        """Run the complete ISEE pipeline from query to synthesized ideas.
+        
+        Args:
+            query_text: The input query text.
+            domain_name: Optional domain name to focus on.
+            model_count: Number of models to use.
+            instruction_count: Number of instructions to use.
+            query_variations: Number of query variations to generate.
+            max_combinations: Maximum number of combinations to execute.
+            output_format: Output format type.
+            
+        Returns:
+            Formatted output of synthesized ideas.
+        """
+        print(f"Running complete pipeline for query: {query_text}")
+        
+        # 1. Create a new query
+        from uuid import uuid4
+        query_id = f"query_{str(uuid4())[:8]}"
+        query = Query(id=query_id, text=query_text)
+        self.query_generator.add_base_query(query)
+        
+        # 2. Determine domains
+        domain_ids = None
+        if domain_name:
+            matching_domains = self.domain_manager.search_domains(domain_name)
+            if matching_domains:
+                domain_ids = [domain.id for domain in matching_domains]
+                print(f"Found {len(domain_ids)} matching domains for '{domain_name}'")
+            else:
+                print(f"No domains found matching '{domain_name}', using all domains")
+        
+        # 3. Generate combinations
+        combinations = self.generate_combinations(
+            query_id=query_id,
+            domain_ids=domain_ids,
+            model_count=model_count,
+            instruction_count=instruction_count,
+            query_variations=query_variations
+        )
+        
+        # 4. Execute combinations
+        results = self.execute_combinations(
+            combinations=combinations,
+            max_to_execute=max_combinations
+        )
+        
+        # 5. Evaluate results
+        evaluations = self.evaluate_results(results=results)
+        
+        # 6. Get top results
+        top_results = self.get_top_results(n=min(10, len(evaluations)))
+        
+        # 7. Synthesize ideas
+        synthesized = self.synthesize_ideas(top_results=top_results)
+        
+        # 8. Format output
+        output = self.format_output(ideas=synthesized, format_type=output_format)
+        
+        print("Pipeline execution complete")
+        return output
+
+
+def main():
+    """Main entry point for the application."""
+    parser = argparse.ArgumentParser(description="Idea Synthesis and Extraction Engine")
+    
+    # Main commands
+    parser.add_argument("--config", help="Path to configuration file")
+    parser.add_argument("--save-state", help="Save application state to file")
+    parser.add_argument("--load-state", help="Load application state from file")
+    
+    # Pipeline parameters
+    parser.add_argument("--query", help="Input query text")
+    parser.add_argument("--domain", help="Domain to focus on")
+    parser.add_argument("--models", type=int, default=2, help="Number of models to use")
+    parser.add_argument("--instructions", type=int, default=3, help="Number of instructions to use")
+    parser.add_argument("--variations", type=int, default=2, help="Number of query variations to generate")
+    parser.add_argument("--max-combinations", type=int, help="Maximum number of combinations to execute")
+    parser.add_argument("--output-format", choices=["markdown", "json"], default="markdown", help="Output format")
+    parser.add_argument("--output-file", help="Path to save the output to")
+    
+    # Parse arguments
+    args = parser.parse_args()
+    
+    # Initialize the application
+    app = ISEEApplication(config_path=args.config)
+    
+    # Load state if requested
+    if args.load_state:
+        app.load_state(args.load_state)
+    
+    # Run pipeline if query is provided
+    if args.query:
+        output = app.run_complete_pipeline(
+            query_text=args.query,
+            domain_name=args.domain,
+            model_count=args.models,
+            instruction_count=args.instructions,
+            query_variations=args.variations,
+            max_combinations=args.max_combinations,
+            output_format=args.output_format
+        )
+        
+        # Print or save the output
+        if args.output_file:
+            with open(args.output_file, 'w') as f:
+                f.write(output)
+            print(f"Output saved to {args.output_file}")
+        else:
+            print("\nOutput:")
+            print("=" * 80)
+            print(output)
+    
+    # Save state if requested
+    if args.save_state:
+        app.save_state(args.save_state)
+
+
+if __name__ == "__main__":
+    main()
