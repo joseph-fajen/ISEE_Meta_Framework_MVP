@@ -258,6 +258,8 @@ class ISEEApplication:
                     print(f"Warning: Could not determine provider for model {model_id}")
                     return None
             
+            print(f"Creating client for model {model_id} using provider: {provider}")
+            
             # Create the client
             client = ModelAPIFactory.create_client(provider)
             self.model_clients[model_id] = client
@@ -374,7 +376,9 @@ class ISEEApplication:
         try:
             if client:
                 # Use the real API client
+                print(f"Making real API call to {model_id}...")
                 response_text = client.generate(prompt, model_params)
+                print(f"Received response from {model_id} (length: {len(response_text)} chars)")
             else:
                 # Fall back to simulation if client creation failed
                 print(f"Warning: Using simulated response for {model_id} due to missing client")
@@ -592,17 +596,42 @@ class ISEEApplication:
                 
                 # In a real implementation, this would analyze and synthesize the texts
                 # For prototype purposes, we'll just create a placeholder
-                synthesized_idea = {
-                    "id": idea_id,
-                    "title": f"Synthesized Idea {i}",
-                    "description": f"This idea represents a synthesis of {len(cluster)} top-ranked responses.",
-                    "source_combinations": [result["combination_id"] for result, _ in cluster],
-                    "text": f"Synthesized text would extract the common themes and innovative elements from cluster {i}.",
-                    "metadata": {
-                        "method": method,
-                        "cluster_id": i,
-                        "cluster_size": len(cluster),
-                        "average_score": sum(score for _, score in cluster) / len(cluster)
+                # Extract actual responses from the results
+                response_texts = [result["response"] for result, _ in cluster]
+                
+                # Use the first response's text if available, or create a summary
+                if response_texts and len(response_texts[0]) > 0:
+                    # Extract a title from the first response
+                    lines = response_texts[0].split('\n')
+                    title_candidate = next((line for line in lines if len(line) > 5 and len(line) < 80), f"Synthesized Idea {i}")
+                    
+                    synthesized_idea = {
+                        "id": idea_id,
+                        "title": title_candidate[:80],  # Use a portion of the first meaningful line as title
+                        "description": f"This idea represents a synthesis of {len(cluster)} top-ranked responses.",
+                        "source_combinations": [result["combination_id"] for result, _ in cluster],
+                        "text": response_texts[0],  # Use the actual response text
+                        "metadata": {
+                            "method": method,
+                            "cluster_id": i,
+                            "cluster_size": len(cluster),
+                            "average_score": sum(score for _, score in cluster) / len(cluster)
+                        }
+                    }
+                else:
+                    # Fallback to placeholder if no response text is available
+                    synthesized_idea = {
+                        "id": idea_id,
+                        "title": f"Synthesized Idea {i}",
+                        "description": f"This idea represents a synthesis of {len(cluster)} top-ranked responses.",
+                        "source_combinations": [result["combination_id"] for result, _ in cluster],
+                        "text": f"Synthesized text would extract the common themes and innovative elements from cluster {i}.",
+                        "metadata": {
+                            "method": method,
+                            "cluster_id": i,
+                            "cluster_size": len(cluster),
+                            "average_score": sum(score for _, score in cluster) / len(cluster)
+                        }
                     }
                 }
                 
