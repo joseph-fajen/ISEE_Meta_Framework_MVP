@@ -102,7 +102,7 @@ You can force simulation mode even if API keys are available by using the `--sim
 ```
 usage: main.py [-h] [--config CONFIG] [--save-state SAVE_STATE] [--load-state LOAD_STATE] [--query QUERY] [--domain DOMAIN] 
                [--models MODELS] [--instructions INSTRUCTIONS] [--variations VARIATIONS] [--max-combinations MAX_COMBINATIONS]
-               [--output-format {markdown,json}] [--output-file OUTPUT_FILE] [--simulate] [--dry-run]
+               [--output-format {markdown,json}] [--output-file OUTPUT_FILE] [--simulate] [--dry-run] [--balanced-models]
 
 Idea Synthesis and Extraction Engine
 
@@ -115,7 +115,7 @@ options:
                         Load application state from file
   --query QUERY         Input query text
   --domain DOMAIN       Domain to focus on
-  --models MODELS       Number of models to use
+  --models MODELS       Number of models to use (use 3 to ensure all configured models are included)
   --instructions INSTRUCTIONS
                         Number of instructions to use
   --variations VARIATIONS
@@ -128,23 +128,47 @@ options:
                         Path to save the output to
   --simulate            Use simulated responses instead of real model APIs
   --dry-run             Print what would be executed without actually running
+  --balanced-models     Ensure balanced representation of models in the executed combinations
 ```
 
 ### Examples
 
-Generate ideas for education innovation using real models:
+**Maximizing Model Diversity (Recommended Approach):**
+
+```bash
+python main.py \
+  --config sample_config.json \
+  --query "How can we create high impact AI workflows for technical documentation in a decentralized organization?" \
+  --domain "Technology Innovation" \
+  --models 3 \
+  --instructions 3 \
+  --variations 2 \
+  --max-combinations 27 \
+  --balanced-models \
+  --output-file ai_documentation_balanced.md
+```
+
+This command enables cognitive diversity by:
+- Using all 3 models (Claude 3.7 Sonnet, GPT-4 Turbo, Claude 3 Opus)
+- Evenly distributing the models across all combinations
+- Including 3 different cognitive styles (e.g., analytical, creative, critical)
+- Generating multiple query variations to explore different aspects
+- Using the `--balanced-models` flag to ensure fair representation
+- Tracking model contributions in the output metadata
+
+**Generate ideas for education innovation using real models:**
 
 ```bash
 python main.py --config sample_config.json --query "How might we redesign education systems to better prepare students for future challenges?" --domain "Education" --models 2 --instructions 5 --variations 3 --max-combinations 15 --output-file "education_ideas.md"
 ```
 
-Generate ideas for healthcare improvement using simulation mode:
+**Generate ideas for healthcare improvement using simulation mode:**
 
 ```bash
 python main.py --query "How can we make healthcare more accessible and affordable for everyone?" --domain "Healthcare" --models 2 --instructions 3 --variations 2 --output-format json --output-file "healthcare_ideas.json" --simulate
 ```
 
-Preview what combinations would be executed without actually running them:
+**Preview what combinations would be executed without actually running them:**
 
 ```bash
 python main.py --query "How might we improve urban transportation?" --domain "Urban Planning" --dry-run
@@ -195,6 +219,8 @@ The current implementation is a working prototype that demonstrates the conceptu
 - ✅ Domain-specific contextualization
 - ✅ Basic evaluation using heuristic-based scoring
 - ✅ Simple idea synthesis and extraction
+- ✅ Model diversity maximization with balanced representation
+- ✅ Enhanced metadata tracking of model contributions
 
 Items still in development:
 

@@ -149,7 +149,8 @@ class ISEEApplication:
         domain_ids: Optional[List[str]] = None,
         model_count: int = 2,
         instruction_count: int = 3,
-        query_variations: int = 2
+        query_variations: int = 2,
+        balanced: bool = False
     ) -> List[Dict[str, Any]]:
         """Generate combinations of models, instructions, queries, and domains.
         
@@ -159,6 +160,7 @@ class ISEEApplication:
             model_count: Number of models to use.
             instruction_count: Number of instructions to use.
             query_variations: Number of query variations to generate.
+            balanced: If True, ensure balanced representation of models in the final combinations.
             
         Returns:
             List of combination dictionaries.
@@ -184,9 +186,49 @@ class ISEEApplication:
         # Use model IDs from config, or create placeholder IDs if not available
         if self.model_configs:
             models = list(self.model_configs.keys())
-            if model_count < len(models):
-                # If we need fewer models than available, randomly select a subset
-                models = random.sample(models, model_count)
+            if model_count == len(models):
+                # Use all available models
+                pass
+            elif model_count < len(models):
+                # If we need fewer models than available, prioritize diversity
+                # Instead of random sampling, we'll ensure we get a mix of different providers
+                provider_models = {}
+                for model_id in models:
+                    if model_id in self.model_configs:
+                        model_config = self.model_configs[model_id]
+                        model_name = model_config.get("name", "")
+                        # Determine provider
+                        provider = model_config.get("provider", "")
+                        if not provider:
+                            if "claude" in model_name.lower():
+                                provider = "anthropic"
+                            elif "gpt" in model_name.lower():
+                                provider = "openai"
+                            else:
+                                provider = "unknown"
+                        # Group by provider
+                        provider_models.setdefault(provider, []).append(model_id)
+                
+                # Select models to ensure diversity across providers
+                selected_models = []
+                # First, select one model from each provider
+                for provider in provider_models:
+                    if provider_models[provider] and len(selected_models) < model_count:
+                        selected_models.append(provider_models[provider][0])
+                
+                # If we still need more models, add additional ones
+                providers_cycle = list(provider_models.keys())
+                idx = 0
+                while len(selected_models) < model_count and idx < 100:  # avoid infinite loop
+                    provider = providers_cycle[idx % len(providers_cycle)]
+                    provider_list = provider_models[provider]
+                    if len(provider_list) > 1:  # If there are more models from this provider
+                        for model in provider_list[1:]:
+                            if model not in selected_models and len(selected_models) < model_count:
+                                selected_models.append(model)
+                    idx += 1
+                
+                models = selected_models
         else:
             # Fall back to placeholder IDs
             models = [f"model_{i}" for i in range(1, model_count + 1)]
@@ -202,21 +244,50 @@ class ISEEApplication:
         # Generate all combinations
         combinations = []
         
-        for model in models:
+        if balanced:
+            # Create combinations in a balanced way by interleaving models
+            # First, create all possible template/query/domain combinations
+            component_combinations = []
             for template in templates:
                 for query in all_queries:
                     for domain in domains:
-                        combination_id = f"{model}_{template.id}_{query.id}_{domain.id}"
-                        
-                        combination = {
-                            "id": combination_id,
-                            "model": model,
-                            "template": template.id,
-                            "query": query.id,
-                            "domain": domain.id
-                        }
-                        
-                        combinations.append(combination)
+                        component_combinations.append((template, query, domain))
+            
+            # Then distribute these combinations across models in a balanced way
+            while component_combinations and models:
+                for model in models:
+                    if not component_combinations:
+                        break
+                    
+                    template, query, domain = component_combinations.pop(0)
+                    combination_id = f"{model}_{template.id}_{query.id}_{domain.id}"
+                    
+                    combination = {
+                        "id": combination_id,
+                        "model": model,
+                        "template": template.id,
+                        "query": query.id,
+                        "domain": domain.id
+                    }
+                    
+                    combinations.append(combination)
+        else:
+            # Create combinations grouped by model (original behavior)
+            for model in models:
+                for template in templates:
+                    for query in all_queries:
+                        for domain in domains:
+                            combination_id = f"{model}_{template.id}_{query.id}_{domain.id}"
+                            
+                            combination = {
+                                "id": combination_id,
+                                "model": model,
+                                "template": template.id,
+                                "query": query.id,
+                                "domain": domain.id
+                            }
+                            
+                            combinations.append(combination)
         
         # Store the combinations
         self.combinations = combinations
@@ -594,6 +665,18 @@ class ISEEApplication:
                 result_texts = [result["response"] for result, _ in cluster]
                 combined_text = "\n\n".join(result_texts)
                 
+                # Group source combinations by model
+                model_contributions = {}
+                for result, _ in cluster:
+                    model_id = result["metadata"]["model"]
+                    model_contributions.setdefault(model_id, 0)
+                    model_contributions[model_id] += 1
+                
+                # Calculate percentage contributions from each model
+                total_contributions = sum(model_contributions.values())
+                model_percentages = {model: (count / total_contributions) * 100 
+                                     for model, count in model_contributions.items()}
+                
                 # In a real implementation, this would analyze and synthesize the texts
                 # For prototype purposes, we'll just create a placeholder
                 response_texts = [result["response"] for result, _ in cluster]
@@ -614,7 +697,9 @@ class ISEEApplication:
                             "method": method,
                             "cluster_id": i,
                             "cluster_size": len(cluster),
-                            "average_score": sum(score for _, score in cluster) / len(cluster)
+                            "average_score": sum(score for _, score in cluster) / len(cluster),
+                            "model_contributions": model_contributions,
+                            "model_percentages": model_percentages
                         }
                     }
                 else:
@@ -629,7 +714,9 @@ class ISEEApplication:
                             "method": method,
                             "cluster_id": i,
                             "cluster_size": len(cluster),
-                            "average_score": sum(score for _, score in cluster) / len(cluster)
+                            "average_score": sum(score for _, score in cluster) / len(cluster),
+                            "model_contributions": model_contributions,
+                            "model_percentages": model_percentages
                         }
                     }
                 
@@ -693,7 +780,30 @@ class ISEEApplication:
                 
                 if "metadata" in idea:
                     output += "### Metadata\n\n"
-                    for key, value in idea["metadata"].items():
+                    
+                    # Special handling for model contributions
+                    if "model_contributions" in idea["metadata"]:
+                        output += "#### Model Contributions\n\n"
+                        model_contributions = idea["metadata"]["model_contributions"]
+                        for model_id, count in model_contributions.items():
+                            model_name = "Unknown"
+                            if model_id in self.model_configs:
+                                model_name = self.model_configs[model_id].get("name", model_id)
+                            
+                            percentage = idea["metadata"]["model_percentages"][model_id]
+                            output += f"- **{model_name}**: {count} responses ({percentage:.1f}%)\n"
+                        
+                        output += "\n"
+                        
+                        # Remove these keys so we don't display them again in the general metadata
+                        metadata_display = {k: v for k, v in idea["metadata"].items() 
+                                           if k not in ["model_contributions", "model_percentages"]}
+                    else:
+                        metadata_display = idea["metadata"]
+                    
+                    # Display remaining metadata
+                    output += "#### Additional Metadata\n\n"
+                    for key, value in metadata_display.items():
                         output += f"- **{key}**: {value}\n"
                 
                 output += "\n---\n\n"
@@ -716,7 +826,8 @@ class ISEEApplication:
         query_variations: int = 2,
         max_combinations: Optional[int] = 10,
         output_format: str = "markdown",
-        use_real_models: bool = True
+        use_real_models: bool = True,
+        balanced_models: bool = False
     ) -> str:
         """Run the complete ISEE pipeline from query to synthesized ideas.
         
@@ -728,6 +839,8 @@ class ISEEApplication:
             query_variations: Number of query variations to generate.
             max_combinations: Maximum number of combinations to execute.
             output_format: Output format type.
+            use_real_models: If True, uses real model API calls. If False, uses simulation.
+            balanced_models: If True, ensure balanced representation of models in the combinations.
             
         Returns:
             Formatted output of synthesized ideas.
@@ -756,7 +869,8 @@ class ISEEApplication:
             domain_ids=domain_ids,
             model_count=model_count,
             instruction_count=instruction_count,
-            query_variations=query_variations
+            query_variations=query_variations,
+            balanced=balanced_models
         )
         
         # 4. Execute combinations
@@ -811,7 +925,7 @@ def main():
     # Pipeline parameters
     parser.add_argument("--query", help="Input query text")
     parser.add_argument("--domain", help="Domain to focus on")
-    parser.add_argument("--models", type=int, default=2, help="Number of models to use")
+    parser.add_argument("--models", type=int, default=2, help="Number of models to use (use 3 to ensure all configured models are included)")
     parser.add_argument("--instructions", type=int, default=3, help="Number of instructions to use")
     parser.add_argument("--variations", type=int, default=2, help="Number of query variations to generate")
     parser.add_argument("--max-combinations", type=int, help="Maximum number of combinations to execute")
@@ -819,6 +933,7 @@ def main():
     parser.add_argument("--output-file", help="Path to save the output to")
     parser.add_argument("--simulate", action="store_true", help="Use simulated responses instead of real model APIs")
     parser.add_argument("--dry-run", action="store_true", help="Print what would be executed without actually running")
+    parser.add_argument("--balanced-models", action="store_true", help="Ensure balanced representation of models in the executed combinations")
     
     # Parse arguments
     args = parser.parse_args()
@@ -860,7 +975,8 @@ def main():
                 query_variations=args.variations,
                 max_combinations=args.max_combinations,
                 output_format=args.output_format,
-                use_real_models=not use_simulation
+                use_real_models=not use_simulation,
+                balanced_models=args.balanced_models
             )
         
         # Print or save the output if not a dry run

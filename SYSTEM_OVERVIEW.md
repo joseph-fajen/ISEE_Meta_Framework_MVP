@@ -6,6 +6,8 @@ This document provides a comprehensive overview of the Idea Synthesis and Extrac
 
 The ISEE framework is built on the principle that innovation is maximized through **deliberate combinatorial exploration** of possibility space. By systematically combining diverse AI models, cognitive frameworks, queries, and domains, the system can generate and identify high-value concepts that might be missed by more linear approaches.
 
+A key pillar of this philosophy is **maximizing model diversity** – ensuring that multiple AI models contribute equally to the exploration process to prevent any single model's perspective from dominating the results. This cognitive diversity across different model architectures is essential for discovering truly innovative ideas that transcend the limitations of any individual model.
+
 ## System Architecture
 
 The ISEE framework is composed of the following core modules:
@@ -27,8 +29,10 @@ This layer manages the diversity of inputs that drive the exploration process:
 This layer handles the generation and execution of combinations:
 
 - **Combination Generator:** Creates all possible combinations of models, instructions, queries, and domains
+  - **Balanced Model Distribution:** Can evenly distribute combinations across models to ensure representational fairness
 - **Model API Integration:** Connects with AI models to generate responses
 - **Result Collector:** Gathers and stores outputs from all combinations
+- **Model Contribution Tracking:** Monitors and records each model's contribution to the final ideas
 
 ### 3. Evaluation Layer
 
@@ -47,7 +51,8 @@ This layer analyzes and scores the generated results:
 This layer synthesizes and refines the most promising ideas:
 
 - **Idea Synthesis:** Combines complementary concepts from top results
-- **Output Formatting:** Prepares ideas for presentation
+- **Model Contribution Analysis:** Analyzes and reports how different models contributed to each synthesized idea
+- **Output Formatting:** Prepares ideas for presentation with detailed model contribution metadata
 - **Result Viewer:** Allows interactive exploration of outputs
 
 ## Module Relationships
@@ -90,6 +95,8 @@ The current implementation demonstrates the conceptual framework with the follow
 
 - Written in Python for maximum flexibility and ease of development
 - Supports real API calls to Anthropic (Claude) and OpenAI models
+- Implements balanced model distribution for maximum cognitive diversity
+- Tracks model contributions in synthesized ideas with detailed metadata
 - Falls back to simulation mode when API keys aren't available
 - Uses configuration files for model settings and parameters
 - Uses simple scoring heuristics for evaluation

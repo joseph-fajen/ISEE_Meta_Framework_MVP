@@ -86,12 +86,42 @@ Save the output to a file:
 python main.py --query "How can we make cities more livable?" --output-file "livable_cities_ideas.md" --config sample_config.json
 ```
 
-## Increasing Diversity
+## Maximizing Diversity
 
-To increase the diversity of generated ideas:
+### Model Diversity
+
+To maximize diversity across different AI models and ensure balanced model representation:
 
 ```bash
-python main.py --query "How might we reimagine public education?" --models 3 --instructions 5 --variations 4 --max-combinations 15 --config sample_config.json
+python main.py \
+  --query "How might we reimagine public education?" \
+  --models 3 \
+  --instructions 3 \
+  --variations 2 \
+  --max-combinations 18 \
+  --balanced-models \
+  --config sample_config.json
+```
+
+The `--balanced-models` flag ensures that combinations are distributed evenly across all models, preventing any single model from dominating the results. This is especially valuable for:
+
+- Preventing bias from a single model's perspective
+- Capturing unique insights from different model architectures
+- Comparing how different models approach the same problem
+- Ensuring diversity in the synthesized ideas
+
+### Cognitive Diversity
+
+To increase the diversity of thinking approaches:
+
+```bash
+python main.py \
+  --query "How might we reimagine public education?" \
+  --models 3 \
+  --instructions 5 \
+  --variations 4 \
+  --max-combinations 20 \
+  --config sample_config.json
 ```
 
 ## Saving and Loading State
@@ -160,21 +190,42 @@ mkdir -p data/results data/state data/output
 
 ## Example Workflow
 
-Here's a complete workflow example:
+Here's a complete workflow example with balanced model representation:
 
 ```bash
-# 1. Run a query with multiple variations
-python main.py --query "How might we reduce carbon emissions in urban areas?" --variations 5 --max-combinations 12 --save-state "data/state/carbon_emissions.json" --config sample_config.json
+# 1. Run a query with multiple variations and balanced model representation
+python main.py \
+  --query "How might we reduce carbon emissions in urban areas?" \
+  --variations 3 \
+  --models 3 \
+  --instructions 3 \
+  --max-combinations 18 \
+  --balanced-models \
+  --save-state "data/state/carbon_emissions.json" \
+  --config sample_config.json \
+  --output-file "data/output/carbon_emissions.md"
 
-# 2. Examine the results
+# 2. Examine the results (note the model contributions section in the metadata)
 cat data/output/carbon_emissions.md
 
-# 3. Run another related query
-python main.py --query "How can we increase adoption of renewable energy?" --domain "Sustainability" --load-state "data/state/carbon_emissions.json" --save-state "data/state/energy_transition.json"
+# 3. Run another related query, maintaining balanced representation
+python main.py \
+  --query "How can we increase adoption of renewable energy?" \
+  --domain "Sustainability" \
+  --models 3 \
+  --balanced-models \
+  --max-combinations 18 \
+  --load-state "data/state/carbon_emissions.json" \
+  --save-state "data/state/energy_transition.json" \
+  --output-file "data/output/renewable_energy.md"
 
 # 4. Combine insights for a comprehensive approach
-python main.py --load-state "data/state/energy_transition.json" --output-file "data/output/sustainability_roadmap.md"
+python main.py \
+  --load-state "data/state/energy_transition.json" \
+  --output-file "data/output/sustainability_roadmap.md"
 ```
+
+The balanced model representation ensures that each model contributes equally to the exploration, and the metadata in the output file shows exactly how each model contributed to each synthesized idea.
 
 ## Troubleshooting
 
@@ -214,10 +265,12 @@ python main.py --query "Your query" --dry-run
 
 Once you're comfortable with the basic operation:
 
-1. Try different domains and queries to explore the framework's versatility
-2. Experiment with different instruction combinations to find what works best for your use cases
-3. Create your own configuration file with preferred models and parameters
-4. Add custom evaluation criteria specific to your domain
-5. Develop your own synthesis methods to extract the most value from the generated ideas
+1. **Maximize Model Diversity**: Always use the `--balanced-models` flag with multiple models to ensure diverse perspectives
+2. Try different domains and queries to explore the framework's versatility
+3. Experiment with different instruction combinations to find what works best for your use cases
+4. Create your own configuration file with preferred models and parameters
+5. Add custom evaluation criteria specific to your domain
+6. Develop your own synthesis methods to extract the most value from the generated ideas
+7. **Analyze Model Contributions**: Examine the model contribution metadata to understand how different models influence different types of ideas
 
 *For detailed, step-by-step example use cases demonstrating the full power of ISEE, see [EXAMPLE_USE_CASES.md](EXAMPLE_USE_CASES.md)*
