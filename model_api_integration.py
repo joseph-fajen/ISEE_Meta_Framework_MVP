@@ -10,6 +10,15 @@ import json
 import time
 import requests
 from typing import Dict, Any, Optional, List, Union
+from pathlib import Path
+try:
+    from dotenv import load_dotenv
+    # Attempt to load .env file from the project root
+    env_path = Path(__file__).parent / '.env'
+    load_dotenv(dotenv_path=env_path)
+except ImportError:
+    # dotenv is not installed, just continue without it
+    pass
 
 class APIIntegrationError(Exception):
     """Base exception for API integration errors."""

@@ -13,8 +13,8 @@ import time
 import random
 
 # Import modules
-from model_api_integration import ModelAPIFactory
-from instruction_templates import TemplateLibrary, create_default_library
+from model_api_integration import ModelAPIFactory, ModelAPIClient
+from instruction_templates import TemplateLibrary, create_default_library, InstructionTemplate
 from query_generator import QueryGenerator, create_default_queries, Query
 from domain_manager import DomainManager, create_default_domains, Domain
 from evaluation_scoring import ScoringFramework, create_default_framework
@@ -47,6 +47,10 @@ class ISEEApplication:
         self.evaluations = {}
         self.synthesized_ideas = {}
         
+        # Model configuration and clients
+        self.model_configs = {}
+        self.model_clients = {}
+        
         # Load configuration if provided
         if config_path:
             self.load_config(config_path)
@@ -69,6 +73,37 @@ class ISEEApplication:
         
         # Directory for data
         os.makedirs("data", exist_ok=True)
+        
+        # Load model configurations
+        if "models" in config:
+            for model_config in config["models"]:
+                model_id = model_config.get("id")
+                if model_id:
+                    self.model_configs[model_id] = model_config
+                    print(f"Loaded configuration for model: {model_id}")
+        
+        # Load instruction templates if provided
+        if "instructions" in config:
+            self.template_library = TemplateLibrary()
+            for template_data in config["instructions"]:
+                template = InstructionTemplate.from_dict(template_data)
+                self.template_library.add_template(template)
+            print(f"Loaded {len(config['instructions'])} instruction templates")
+        
+        # Load domains if provided
+        if "domains" in config:
+            self.domain_manager = DomainManager()
+            for domain_data in config["domains"]:
+                domain = Domain.from_dict(domain_data)
+                self.domain_manager.add_domain(domain)
+            print(f"Loaded {len(config['domains'])} domains")
+        
+        # Load queries if provided
+        if "queries" in config:
+            for query_data in config["queries"]:
+                query = Query.from_dict(query_data)
+                self.query_generator.add_base_query(query)
+            print(f"Loaded {len(config['queries'])} queries")
     
     def save_state(self, state_path: str) -> None:
         """Save the current state to a file.
@@ -146,8 +181,15 @@ class ISEEApplication:
         else:
             domains = self.domain_manager.list_domains()
         
-        # For prototype, use placeholder model IDs
-        models = [f"model_{i}" for i in range(1, model_count + 1)]
+        # Use model IDs from config, or create placeholder IDs if not available
+        if self.model_configs:
+            models = list(self.model_configs.keys())
+            if model_count < len(models):
+                # If we need fewer models than available, randomly select a subset
+                models = random.sample(models, model_count)
+        else:
+            # Fall back to placeholder IDs
+            models = [f"model_{i}" for i in range(1, model_count + 1)]
         
         # Get instructions
         all_templates = self.template_library.list_templates()
@@ -182,11 +224,57 @@ class ISEEApplication:
         print(f"Generated {len(combinations)} combinations")
         return combinations
     
+    def _get_or_create_model_client(self, model_id: str) -> Optional[ModelAPIClient]:
+        """Get or create a model API client.
+        
+        Args:
+            model_id: ID of the model.
+            
+        Returns:
+            ModelAPIClient instance or None if model configuration is not available.
+        """
+        # Return existing client if already created
+        if model_id in self.model_clients:
+            return self.model_clients[model_id]
+        
+        # Check if we have configuration for this model
+        if model_id not in self.model_configs:
+            print(f"Warning: No configuration found for model {model_id}")
+            return None
+        
+        # Create a new client
+        model_config = self.model_configs[model_id]
+        model_name = model_config.get("name", "")
+        
+        try:
+            # Determine provider from model name or explicit provider field
+            provider = model_config.get("provider", "")
+            if not provider:
+                if "claude" in model_name.lower():
+                    provider = "anthropic"
+                elif "gpt" in model_name.lower():
+                    provider = "openai"
+                else:
+                    print(f"Warning: Could not determine provider for model {model_id}")
+                    return None
+            
+            print(f"Creating client for model {model_id} using provider: {provider}")
+            
+            # Create the client
+            client = ModelAPIFactory.create_client(provider)
+            self.model_clients[model_id] = client
+            return client
+        
+        except Exception as e:
+            print(f"Error creating client for model {model_id}: {str(e)}")
+            return None
+    
     def execute_combinations(
         self,
         combinations: Optional[List[Dict[str, Any]]] = None,
         max_to_execute: Optional[int] = None,
-        dry_run: bool = False
+        dry_run: bool = False,
+        use_real_models: bool = True
     ) -> Dict[str, Any]:
         """Execute the generated combinations.
         
@@ -194,6 +282,7 @@ class ISEEApplication:
             combinations: Optional list of combinations to execute. If None, uses stored combinations.
             max_to_execute: Optional maximum number of combinations to execute.
             dry_run: If True, just print what would be executed without actually executing.
+            use_real_models: If True, uses real model API calls. If False, uses simulation.
             
         Returns:
             Dictionary mapping combination IDs to results.
@@ -222,19 +311,99 @@ class ISEEApplication:
             query_obj = self.query_generator.get_query_by_id(combo["query"])
             domain = self.domain_manager.get_domain(combo["domain"])
             
-            # In a real implementation, this would call the model API
-            # For prototype purposes, we'll just simulate it
-            result = self._simulate_model_response(combo, template, query_obj, domain)
+            # Determine whether to use real API or simulation
+            use_api = use_real_models and self.model_configs
+            
+            if use_api:
+                # Use real model API
+                result = self._generate_model_response(combo, template, query_obj, domain)
+            else:
+                # Use simulation
+                result = self._simulate_model_response(combo, template, query_obj, domain)
             
             # Store the result
             results[combo["id"]] = result
             self.results[combo["id"]] = result
             
-            # Add a small delay to simulate processing time
-            time.sleep(0.1)
+            # Add a small delay between requests to avoid rate limits
+            time.sleep(0.2)
         
         print(f"Executed {len(results)} combinations")
         return results
+    
+    def _generate_model_response(
+        self,
+        combination: Dict[str, Any],
+        template: Any,
+        query: Query,
+        domain: Domain
+    ) -> Dict[str, Any]:
+        """Generate a response using the actual model API.
+        
+        Args:
+            combination: Combination dictionary.
+            template: Instruction template.
+            query: Query object.
+            domain: Domain object.
+            
+        Returns:
+            Result dictionary with API response.
+        """
+        # Format the instruction template
+        formatted_instruction = template.format({
+            "domain": domain.description,
+            **query.variables
+        })
+        
+        # Combine the instruction and query
+        prompt = f"{formatted_instruction}\n\n{query.text}"
+        
+        # Get the model ID and client
+        model_id = combination["model"]
+        client = self._get_or_create_model_client(model_id)
+        template_style = template.metadata.get("cognitive_style", "default")
+        
+        # Get model parameters from config
+        model_params = {}
+        if model_id in self.model_configs:
+            model_config = self.model_configs[model_id]
+            if "parameters" in model_config:
+                model_params = model_config["parameters"].copy()
+        
+        response_text = ""
+        start_time = time.time()
+        
+        try:
+            if client:
+                # Use the real API client
+                print(f"Making real API call to {model_id}...")
+                response_text = client.generate(prompt, model_params)
+                print(f"Received response from {model_id} (length: {len(response_text)} chars)")
+            else:
+                # Fall back to simulation if client creation failed
+                print(f"Warning: Using simulated response for {model_id} due to missing client")
+                return self._simulate_model_response(combination, template, query, domain)
+        
+        except Exception as e:
+            # Handle API errors gracefully
+            error_message = str(e)
+            print(f"Error calling API for {model_id}: {error_message}")
+            response_text = f"Error generating response: {error_message}"
+        
+        end_time = time.time()
+        duration = end_time - start_time
+        
+        return {
+            "combination_id": combination["id"],
+            "prompt": prompt,
+            "response": response_text,
+            "metadata": {
+                "model": model_id,
+                "template_style": template_style,
+                "timestamp": time.time(),
+                "duration": duration
+            }
+        }
     
     def _simulate_model_response(
         self,
@@ -263,8 +432,7 @@ class ISEEApplication:
         # Combine the instruction and query
         prompt = f"{formatted_instruction}\n\n{query.text}"
         
-        # In a real implementation, this would call the model API
-        # For prototype purposes, we'll just generate a placeholder response
+        # For simulation purposes, generate a placeholder response
         model_name = combination["model"]
         template_style = template.metadata.get("cognitive_style", "default")
         
@@ -300,7 +468,8 @@ class ISEEApplication:
             "metadata": {
                 "model": model_name,
                 "template_style": template_style,
-                "timestamp": time.time()
+                "timestamp": time.time(),
+                "simulated": True
             }
         }
     
@@ -427,19 +596,42 @@ class ISEEApplication:
                 
                 # In a real implementation, this would analyze and synthesize the texts
                 # For prototype purposes, we'll just create a placeholder
-                synthesized_idea = {
-                    "id": idea_id,
-                    "title": f"Synthesized Idea {i}",
-                    "description": f"This idea represents a synthesis of {len(cluster)} top-ranked responses.",
-                    "source_combinations": [result["combination_id"] for result, _ in cluster],
-                    "text": f"Synthesized text would extract the common themes and innovative elements from cluster {i}.",
-                    "metadata": {
-                        "method": method,
-                        "cluster_id": i,
-                        "cluster_size": len(cluster),
-                        "average_score": sum(score for _, score in cluster) / len(cluster)
+                response_texts = [result["response"] for result, _ in cluster]
+                
+                # Use the first response's text if available, or create a summary
+                if response_texts and len(response_texts[0]) > 0:
+                    # Extract a title from the first response
+                    lines = response_texts[0].split('\n')
+                    title_candidate = next((line for line in lines if len(line) > 5 and len(line) < 80), f"Synthesized Idea {i}")
+                    
+                    synthesized_idea = {
+                        "id": idea_id,
+                        "title": title_candidate[:80],  # Use a portion of the first meaningful line as title
+                        "description": f"This idea represents a synthesis of {len(cluster)} top-ranked responses.",
+                        "source_combinations": [result["combination_id"] for result, _ in cluster],
+                        "text": response_texts[0],  # Use the actual response text
+                        "metadata": {
+                            "method": method,
+                            "cluster_id": i,
+                            "cluster_size": len(cluster),
+                            "average_score": sum(score for _, score in cluster) / len(cluster)
+                        }
                     }
-                }
+                else:
+                    # Fallback to placeholder if no response text is available
+                    synthesized_idea = {
+                        "id": idea_id,
+                        "title": f"Synthesized Idea {i}",
+                        "description": f"This idea represents a synthesis of {len(cluster)} top-ranked responses.",
+                        "source_combinations": [result["combination_id"] for result, _ in cluster],
+                        "text": f"Synthesized text would extract the common themes and innovative elements from cluster {i}.",
+                        "metadata": {
+                            "method": method,
+                            "cluster_id": i,
+                            "cluster_size": len(cluster),
+                            "average_score": sum(score for _, score in cluster) / len(cluster)
+                        }
+                    }
                 
                 synthesized[idea_id] = synthesized_idea
         
@@ -523,7 +715,8 @@ class ISEEApplication:
         instruction_count: int = 3,
         query_variations: int = 2,
         max_combinations: Optional[int] = 10,
-        output_format: str = "markdown"
+        output_format: str = "markdown",
+        use_real_models: bool = True
     ) -> str:
         """Run the complete ISEE pipeline from query to synthesized ideas.
         
@@ -569,7 +762,8 @@ class ISEEApplication:
         # 4. Execute combinations
         results = self.execute_combinations(
             combinations=combinations,
-            max_to_execute=max_combinations
+            max_to_execute=max_combinations,
+            use_real_models=use_real_models
         )
         
         # 5. Evaluate results
@@ -590,6 +784,23 @@ class ISEEApplication:
 
 def main():
     """Main entry point for the application."""
+    # Check if API keys are available
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    
+    if anthropic_key or openai_key:
+        api_status = []
+        if anthropic_key:
+            api_status.append("Anthropic API key found")
+        if openai_key:
+            api_status.append("OpenAI API key found")
+        print(f"API Status: {', '.join(api_status)}")
+        print("Real model API calls can be used. Use --simulate to use simulation instead.")
+    else:
+        print("API Status: No API keys found. Will use simulation mode by default.")
+        print("To use real models, create a .env file with ANTHROPIC_API_KEY and/or OPENAI_API_KEY")
+    print()
+    
     parser = argparse.ArgumentParser(description="Idea Synthesis and Extraction Engine")
     
     # Main commands
@@ -606,6 +817,8 @@ def main():
     parser.add_argument("--max-combinations", type=int, help="Maximum number of combinations to execute")
     parser.add_argument("--output-format", choices=["markdown", "json"], default="markdown", help="Output format")
     parser.add_argument("--output-file", help="Path to save the output to")
+    parser.add_argument("--simulate", action="store_true", help="Use simulated responses instead of real model APIs")
+    parser.add_argument("--dry-run", action="store_true", help="Print what would be executed without actually running")
     
     # Parse arguments
     args = parser.parse_args()
@@ -617,27 +830,49 @@ def main():
     if args.load_state:
         app.load_state(args.load_state)
     
+    # Determine if we should use simulation mode
+    use_simulation = args.simulate
+    if not use_simulation and not (anthropic_key or openai_key):
+        print("No API keys available. Forcing simulation mode.")
+        use_simulation = True
+    
     # Run pipeline if query is provided
     if args.query:
-        output = app.run_complete_pipeline(
-            query_text=args.query,
-            domain_name=args.domain,
-            model_count=args.models,
-            instruction_count=args.instructions,
-            query_variations=args.variations,
-            max_combinations=args.max_combinations,
-            output_format=args.output_format
-        )
-        
-        # Print or save the output
-        if args.output_file:
-            with open(args.output_file, 'w') as f:
-                f.write(output)
-            print(f"Output saved to {args.output_file}")
+        # If dry run is specified, just print what would be executed
+        if args.dry_run:
+            combinations = app.generate_combinations(
+                query_id=app.query_generator.list_base_queries()[0].id,
+                model_count=args.models,
+                instruction_count=args.instructions,
+                query_variations=args.variations
+            )
+            app.execute_combinations(
+                combinations=combinations,
+                max_to_execute=args.max_combinations,
+                dry_run=True
+            )
         else:
-            print("\nOutput:")
-            print("=" * 80)
-            print(output)
+            output = app.run_complete_pipeline(
+                query_text=args.query,
+                domain_name=args.domain,
+                model_count=args.models,
+                instruction_count=args.instructions,
+                query_variations=args.variations,
+                max_combinations=args.max_combinations,
+                output_format=args.output_format,
+                use_real_models=not use_simulation
+            )
+        
+        # Print or save the output if not a dry run
+        if not args.dry_run:
+            if args.output_file:
+                with open(args.output_file, 'w') as f:
+                    f.write(output)
+                print(f"Output saved to {args.output_file}")
+            else:
+                print("\nOutput:")
+                print("=" * 80)
+                print(output)
     
     # Save state if requested
     if args.save_state:

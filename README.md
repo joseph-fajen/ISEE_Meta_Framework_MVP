@@ -4,6 +4,19 @@
 
 The Idea Synthesis and Extraction Engine is a meta-framework for innovation that systematically leverages AI to generate, evaluate, and extract high-value concepts across any domain. Rather than using AI in a single-prompt manner, this framework creates a deliberate combinatorial approach that maximizes the exploration of possibility space before filtering for the most promising ideas.
 
+### A New Paradigm for AI-Powered Innovation
+
+ISEE represents a fundamentally different approach to using AI for innovation:
+
+- **Beyond Single Prompts**: Instead of relying on individual prompts, ISEE systematically explores combinations of models, cognitive frameworks, queries, and domains
+- **Maximizing Cognitive Diversity**: By employing multiple instruction templates that embody different thinking styles, ISEE accesses a wider range of approaches than a single human could generate
+- **From Volume to Value**: ISEE doesn't just generate content—it evaluates, ranks, and synthesizes the outputs to extract the most valuable concepts
+- **Persistent Exploration**: With state saving capabilities, teams can build cumulative knowledge across sessions and collaborate on complex innovation challenges
+
+*For a deeper understanding of why ISEE matters and how it differs from traditional AI approaches, see [WHY_ISEE.md](WHY_ISEE.md)*
+
+*For concrete examples of how to use ISEE for different innovation challenges, see [EXAMPLE_USE_CASES.md](EXAMPLE_USE_CASES.md)*
+
 ## Repository Contents
 
 This repository contains the following files:
@@ -46,17 +59,50 @@ This will:
 1. Create a new query based on the input text
 2. Generate variations of the query
 3. Generate combinations of models, instructions, queries, and domains
-4. Execute the combinations (simulated in the prototype)
+4. Execute the combinations (using real API calls if API keys are available)
 5. Evaluate the results
 6. Synthesize ideas from the top results
 7. Format and display the output
 
+### API Integration
+
+The system now supports real API calls to Anthropic (Claude) and OpenAI models. To use this functionality:
+
+1. Set up API keys by either:
+
+   **Option 1:** Using environment variables:
+   ```bash
+   # For Anthropic Claude models
+   export ANTHROPIC_API_KEY=your_api_key_here
+   
+   # For OpenAI GPT models
+   export OPENAI_API_KEY=your_api_key_here
+   ```
+   
+   **Option 2:** Using a .env file (recommended for development):
+   ```bash
+   # Copy the template file
+   cp .env.template .env
+   
+   # Edit the .env file with your API keys
+   nano .env  # or use any text editor
+   ```
+
+2. Configure models in a configuration file (see `sample_config.json` for an example)
+
+3. Run with the config file:
+   ```bash
+   python main.py --config sample_config.json --query "Your query here"
+   ```
+
+You can force simulation mode even if API keys are available by using the `--simulate` flag.
+
 ### Command-Line Options
 
 ```
-usage: main.py [-h] [--config CONFIG] [--save-state SAVE_STATE] [--load-state LOAD_STATE] [--query QUERY] [--domain DOMAIN] [--models MODELS]
-               [--instructions INSTRUCTIONS] [--variations VARIATIONS] [--max-combinations MAX_COMBINATIONS]
-               [--output-format {markdown,json}] [--output-file OUTPUT_FILE]
+usage: main.py [-h] [--config CONFIG] [--save-state SAVE_STATE] [--load-state LOAD_STATE] [--query QUERY] [--domain DOMAIN] 
+               [--models MODELS] [--instructions INSTRUCTIONS] [--variations VARIATIONS] [--max-combinations MAX_COMBINATIONS]
+               [--output-format {markdown,json}] [--output-file OUTPUT_FILE] [--simulate] [--dry-run]
 
 Idea Synthesis and Extraction Engine
 
@@ -80,20 +126,28 @@ options:
                         Output format
   --output-file OUTPUT_FILE
                         Path to save the output to
+  --simulate            Use simulated responses instead of real model APIs
+  --dry-run             Print what would be executed without actually running
 ```
 
 ### Examples
 
-Generate ideas for education innovation:
+Generate ideas for education innovation using real models:
 
 ```bash
-python main.py --query "How might we redesign education systems to better prepare students for future challenges?" --domain "Education" --models 2 --instructions 5 --variations 3 --max-combinations 15 --output-file "education_ideas.md"
+python main.py --config sample_config.json --query "How might we redesign education systems to better prepare students for future challenges?" --domain "Education" --models 2 --instructions 5 --variations 3 --max-combinations 15 --output-file "education_ideas.md"
 ```
 
-Generate ideas for healthcare improvement:
+Generate ideas for healthcare improvement using simulation mode:
 
 ```bash
-python main.py --query "How can we make healthcare more accessible and affordable for everyone?" --domain "Healthcare" --models 2 --instructions 3 --variations 2 --output-format json --output-file "healthcare_ideas.json"
+python main.py --query "How can we make healthcare more accessible and affordable for everyone?" --domain "Healthcare" --models 2 --instructions 3 --variations 2 --output-format json --output-file "healthcare_ideas.json" --simulate
+```
+
+Preview what combinations would be executed without actually running them:
+
+```bash
+python main.py --query "How might we improve urban transportation?" --domain "Urban Planning" --dry-run
 ```
 
 ### Saving and Loading State
@@ -121,22 +175,34 @@ The ISEE framework consists of four main layers:
 
 ## Development Roadmap
 
-1. Integrate with real model APIs (currently simulated in the prototype)
+1. ✅ Integrate with real model APIs
 2. Implement more sophisticated evaluation algorithms
 3. Add clustering and pattern detection for better synthesis
 4. Develop a web-based user interface
 5. Add collaborative features for team-based innovation
 6. Implement feedback loops to improve the quality of generated ideas
+7. Add proper database integration for state management
+8. Implement parallel execution for better performance
 
-## Note About the Prototype
+## Implementation Status
 
-The current implementation is a working prototype that demonstrates the conceptual framework. In this version:
+The current implementation is a working prototype that demonstrates the conceptual framework. Current features:
 
-- Model API calls are simulated (no actual API calls are made)
-- Evaluation is based on simple heuristics
-- Idea synthesis is simulated rather than using sophisticated NLP
+- ✅ Real model API integration with Anthropic (Claude) and OpenAI
+- ✅ Configuration-based model setup with fallback to simulation
+- ✅ Flexible query generation with multiple variation strategies
+- ✅ Diverse instruction templates for cognitive approach variation
+- ✅ Domain-specific contextualization
+- ✅ Basic evaluation using heuristic-based scoring
+- ✅ Simple idea synthesis and extraction
 
-To create a production-ready system, you would need to replace these simulated components with real implementations.
+Items still in development:
+
+- Evaluation is based on simple heuristics that could be enhanced with more sophisticated analysis
+- Idea synthesis could be improved with more advanced NLP techniques
+- Pattern recognition and clustering for better synthesis are planned
+- A web-based user interface is on the roadmap
+- Proper database integration for state management would improve scalability
 
 ## Contributors
 

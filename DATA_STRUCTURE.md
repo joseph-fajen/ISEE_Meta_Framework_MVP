@@ -42,11 +42,19 @@ Example files:
 This directory stores application state files that capture the complete state of an ISEE session, including:
 
 - Combinations
-- Results
-- Evaluations
+- Results (including full API responses)
+- Evaluations (scores for each criterion)
 - Synthesized ideas
 
-These files allow you to save your progress and resume work later, or to analyze the results using the Result Viewer.
+**Benefits of State Files:**
+
+- **Persistence Across Sessions**: Even if you shut down your terminal or restart your computer, you can continue exactly where you left off by loading the state file.
+- **API Cost Efficiency**: Avoid duplicate API calls by reusing previously generated responses.
+- **Reproducibility**: Share state files with colleagues to allow them to reproduce and build upon your work.
+- **Experimentation**: Try different evaluation criteria or synthesis methods on the same data without making new API calls.
+- **Analysis**: Use the Result Viewer to deeply analyze the relationships between different combinations.
+
+State files are JSON documents that preserve all the data necessary to recreate your working session exactly as it was when saved.
 
 Example files:
 - `urban_transportation.json` - State from urban transportation session

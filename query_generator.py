@@ -408,6 +408,14 @@ class QueryGenerator:
         for variations in self.variations.values():
             all_queries.extend(variations)
         return all_queries
+        
+    def list_base_queries(self) -> List[Query]:
+        """Get only the base queries (not variations).
+        
+        Returns:
+            List of base queries.
+        """
+        return list(self.base_queries.values())
     
     def get_query_by_id(self, query_id: str) -> Optional[Query]:
         """Get a query by its ID.
