@@ -4,6 +4,17 @@ This document provides detailed example use cases for the ISEE framework, each s
 
 > **NEW**: All examples now include the `--balanced-models` flag to ensure optimal model diversity and prevent any single model from dominating the results. This feature distributes combinations evenly across all models and tracks their contributions in the synthesized output.
 
+## Prerequisites
+
+Before running any of the examples in this document, make sure to create the necessary directory structure for saving states and outputs:
+
+```bash
+# Create the required directory structure
+mkdir -p data/state data/output
+```
+
+All example commands in this document assume this directory structure exists. If you encounter a `FileNotFoundError` when running any command, it's likely because these directories haven't been created yet.
+
 ## Use Case 1: Product Innovation - Reimagining Smart Home Interfaces
 
 ### Scenario
@@ -218,22 +229,26 @@ python main.py --load-state "data/state/collaborative_documentation.json" --outp
 
 1. **Start with a clear, open-ended question** that defines your innovation challenge
 2. **Always use the `--balanced-models` flag** to ensure optimal model diversity
-3. **Adjust parameters based on your needs**:
+3. **Create the necessary directory structure** before running commands:
+   ```bash
+   mkdir -p data/state data/output
+   ```
+4. **Adjust parameters based on your needs**:
    - More `--variations` for exploring different perspectives
    - More `--instructions` for diverse cognitive approaches
    - Use `--models 3` to include all available AI models
    - Set `--max-combinations` appropriately to ensure all models are included
 
-4. **Calculate the right combination count** using this formula:
+5. **Calculate the right combination count** using this formula:
    - Total combinations = models × instructions × variations × domains
    - Ensure `--max-combinations` is at least equal to this number
 
-5. **Use domain constraints** to focus on specific contexts
-6. **Save state files** to build cumulative knowledge
-7. **Use the Result Viewer** to dive deeper into specific outputs
-8. **Analyze model contribution data** to understand model strengths
-9. **Follow promising threads** with targeted follow-up queries
-10. **Experiment with different synthesis methods** to extract maximum value
+6. **Use domain constraints** to focus on specific contexts
+7. **Save state files** to build cumulative knowledge
+8. **Use the Result Viewer** to dive deeper into specific outputs
+9. **Analyze model contribution data** to understand model strengths
+10. **Follow promising threads** with targeted follow-up queries
+11. **Experiment with different synthesis methods** to extract maximum value
 
 ## Advanced Example: Multi-Stage Innovation Process with Model Diversity
 
