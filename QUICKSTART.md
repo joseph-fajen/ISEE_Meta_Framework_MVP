@@ -16,11 +16,22 @@ This guide provides a quick overview of how to get started with the Idea Synthes
 
 2. **API Keys**
    
-   Set up your API keys to use real model APIs:
+   Set up your API keys to use real model APIs. There are two ways to do this:
+   
+   **Option 1:** Using environment variables:
    ```bash
    # Set environment variables for API keys
    export ANTHROPIC_API_KEY="your-anthropic-api-key"
    export OPENAI_API_KEY="your-openai-api-key"
+   ```
+   
+   **Option 2:** Using a .env file (recommended for development):
+   ```bash
+   # Copy the template file
+   cp .env.template .env
+   
+   # Edit the .env file with your API keys
+   nano .env  # or use any text editor
    ```
    
    If you don't have API keys, the system will automatically use simulation mode.

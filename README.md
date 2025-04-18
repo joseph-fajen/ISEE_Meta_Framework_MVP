@@ -55,13 +55,24 @@ This will:
 
 The system now supports real API calls to Anthropic (Claude) and OpenAI models. To use this functionality:
 
-1. Set up API keys as environment variables:
+1. Set up API keys by either:
+
+   **Option 1:** Using environment variables:
    ```bash
    # For Anthropic Claude models
    export ANTHROPIC_API_KEY=your_api_key_here
    
    # For OpenAI GPT models
    export OPENAI_API_KEY=your_api_key_here
+   ```
+   
+   **Option 2:** Using a .env file (recommended for development):
+   ```bash
+   # Copy the template file
+   cp .env.template .env
+   
+   # Edit the .env file with your API keys
+   nano .env  # or use any text editor
    ```
 
 2. Configure models in a configuration file (see `sample_config.json` for an example)

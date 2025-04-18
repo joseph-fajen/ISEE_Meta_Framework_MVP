@@ -771,6 +771,7 @@ def main():
         print("Real model API calls can be used. Use --simulate to use simulation instead.")
     else:
         print("API Status: No API keys found. Will use simulation mode by default.")
+        print("To use real models, create a .env file with ANTHROPIC_API_KEY and/or OPENAI_API_KEY")
     print()
     
     parser = argparse.ArgumentParser(description="Idea Synthesis and Extraction Engine")
