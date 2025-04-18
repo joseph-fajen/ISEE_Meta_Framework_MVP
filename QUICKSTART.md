@@ -34,6 +34,8 @@ This guide provides a quick overview of how to get started with the Idea Synthes
    nano .env  # or use any text editor
    ```
    
+   **IMPORTANT NOTE**: In addition to setting up API keys, you **must** also use the `--config` parameter with a valid configuration file (like sample_config.json) to use real API calls. Without a configuration file, the system will fall back to simulation mode even when API keys are present.
+   
    If you don't have API keys, the system will automatically use simulation mode.
 
 ## Understanding the ISEE Approach
@@ -54,14 +56,16 @@ This guide provides a quick overview of how to get started with the Idea Synthes
 Try a simple run to see the framework in action:
 
 ```bash
-python main.py --query "How might we improve remote work collaboration?" --max-combinations 6
+python main.py --query "How might we improve remote work collaboration?" --max-combinations 6 --config sample_config.json
 ```
+
+> **IMPORTANT**: The `--config` parameter is required to use real API calls. Without it, the system will use simulation mode even if API keys are configured.
 
 This will:
 - Create a base query
 - Generate variations of the query
 - Create combinations with different models, instructions, and domains
-- Execute these combinations (using real API calls if keys are available, or simulation otherwise)
+- Execute these combinations (using real API calls if keys are available and config is provided, or simulation otherwise)
 - Evaluate the results
 - Synthesize ideas from the top results
 - Display the output
@@ -71,7 +75,7 @@ This will:
 To focus on a specific domain:
 
 ```bash
-python main.py --query "How might we design more sustainable packaging?" --domain "Sustainability" --max-combinations 8
+python main.py --query "How might we design more sustainable packaging?" --domain "Sustainability" --max-combinations 8 --config sample_config.json
 ```
 
 ## Saving Results
@@ -79,7 +83,7 @@ python main.py --query "How might we design more sustainable packaging?" --domai
 Save the output to a file:
 
 ```bash
-python main.py --query "How can we make cities more livable?" --output-file "livable_cities_ideas.md"
+python main.py --query "How can we make cities more livable?" --output-file "livable_cities_ideas.md" --config sample_config.json
 ```
 
 ## Increasing Diversity
@@ -87,7 +91,7 @@ python main.py --query "How can we make cities more livable?" --output-file "liv
 To increase the diversity of generated ideas:
 
 ```bash
-python main.py --query "How might we reimagine public education?" --models 3 --instructions 5 --variations 4 --max-combinations 15
+python main.py --query "How might we reimagine public education?" --models 3 --instructions 5 --variations 4 --max-combinations 15 --config sample_config.json
 ```
 
 ## Saving and Loading State
@@ -96,7 +100,7 @@ One of the most powerful features of the ISEE framework is the ability to save a
 
 ```bash
 # Run a session and save the state
-python main.py --query "How might we reduce food waste?" --save-state "food_waste_state.json"
+python main.py --query "How might we reduce food waste?" --save-state "food_waste_state.json" --config sample_config.json
 
 # Later, even after restarting your computer, load the state and continue working
 python main.py --load-state "food_waste_state.json" --output-file "food_waste_ideas.md"
@@ -115,16 +119,18 @@ For example, to load a state file and try a different output format:
 python main.py --load-state "food_waste_state.json" --output-format json
 ```
 
+Note: When loading an existing state file, the `--config` parameter is not required for subsequent operations, as the model configurations are stored in the state.
+
 ## Customizing Output Format
 
 Choose between markdown and JSON output formats:
 
 ```bash
 # Get output in JSON format
-python main.py --query "How can we improve healthcare access?" --output-format json
+python main.py --query "How can we improve healthcare access?" --output-format json --config sample_config.json
 
 # Get output in Markdown format (default)
-python main.py --query "How can we improve healthcare access?" --output-format markdown
+python main.py --query "How can we improve healthcare access?" --output-format markdown --config sample_config.json
 ```
 
 ## Extending the Framework
@@ -158,7 +164,7 @@ Here's a complete workflow example:
 
 ```bash
 # 1. Run a query with multiple variations
-python main.py --query "How might we reduce carbon emissions in urban areas?" --variations 5 --max-combinations 12 --save-state "data/state/carbon_emissions.json"
+python main.py --query "How might we reduce carbon emissions in urban areas?" --variations 5 --max-combinations 12 --save-state "data/state/carbon_emissions.json" --config sample_config.json
 
 # 2. Examine the results
 cat data/output/carbon_emissions.md
@@ -174,6 +180,7 @@ python main.py --load-state "data/state/energy_transition.json" --output-file "d
 
 - **Module not found errors**: Ensure you've activated your virtual environment and installed all requirements
 - **API errors**: Check your API keys and connection if using real API integration
+- **Simulated responses despite API keys**: Make sure to include the `--config sample_config.json` parameter, which is required for real API calls
 - **Memory issues**: Reduce the number of combinations with `--max-combinations` for large runs
 - **Data persistence**: Use `--save-state` frequently to avoid losing work
 
