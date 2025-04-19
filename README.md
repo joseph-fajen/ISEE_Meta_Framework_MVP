@@ -232,8 +232,10 @@ Items still in development:
 
 ## Contributors
 
-This project is based on the meta-framework concept developed by Joseph Fajen.
+This project is based on the ISEE meta-framework concept developed by Joseph Fajen. 
+Ongoing software development is a collaborative effort between Joseph Fajen, Claude Code, and Claude Desktop.
 
 ## License
 
-[License information will be added here]
+This project is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).  
+You are free to use, modify, and distribute this software, provided you include proper attribution to the original author, Joseph Fajen, and retain the license terms.
